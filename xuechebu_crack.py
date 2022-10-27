@@ -11,15 +11,18 @@ USER_INFO_CORRECT = True
 
 def get_unfinished_list(session):
     url = 'http://xcbapi.xuechebu.com/videoApi/video/GetChapterList?os=pc'
+    # url = 'https://xuexiapi.xuechebu.com/videoApiNew/SpPlay/GetChapterInfo'
 
     unfinished = []
 
     try:
         r = session.get(url)
         data = get_response_data(r)
+        # print(data)
+        # sys.exit(1)
 
-        subject = data[0]  # 科目1
-        # subject = data[1]  # 科目3
+        # subject = data[0]  # 科目1
+        subject = data[1]  # 科目4
         classes = subject['ClassList']
 
         for a_class in classes:
@@ -34,6 +37,7 @@ def get_unfinished_list(session):
                 if not finished:
                     unfinished.append(a_chapter)
 
+        # sys.exit(1)
         return unfinished
 
     except Exception as e:
@@ -82,25 +86,37 @@ def get_should_chapter(session):
 
 
 def login(session, username, password):
-    url = 'http://api.xuechebu.com/user/stulogin'
+    url = 'https://api.xuechebu.com/usercenter/userinfo/login'
 
     data = {
         'username': username,
-        'password': password,
-        'os': 'pc'
+        'passwordmd5': password
     }
 
     try:
-        r = session.post(url, data)
-        data = get_response_data(r)
+        # r = session.post(url, data)
+        headers={
+            "Content-Type":"application/x-www-form-urlencoded"
+        }
+        cookies={
 
-        print('登录成功! 姓名: {}, 驾校: {}.'.format(data['xm'], data['jxmc']))
+        }
+        datas={
+            'username': username,
+            'passwordmd5': password
+        }
+        r = session.post(url,data=datas,headers=headers,cookies=cookies)
+        data = get_response_data(r)
+        print(data)
+
+        print('登录成功! 姓名: {}, 驾校: {}.'.format(data['XM'], data['JXMC']))
         return True
 
     except Exception as e:
         print('登录失败: ' + str(e))
         return False
 
+    
 
 def get_response_data(response):
     try:
@@ -135,6 +151,7 @@ def main():
         user = get_user()
 
         succeed = login(session, *user)
+        # sys.exit(1)
 
         if not succeed:
             print('登录失败~ 请重试.\n')
@@ -155,6 +172,8 @@ def main():
         return
 
     can_learn = get_should_chapter(session)
+
+    # sys.exit(1)
 
     if can_learn:
         print()
@@ -180,9 +199,11 @@ def get_user():
         else:
             user = USER
 
+    # user = ["370481199512256750", "ac63c014a98d6a19cb3f51e167be91ad"]
+
     while not (user and is_valid_username(user[0])):
-        username = input('请输入驾校帐号: ')
-        password = getpass.getpass('请输入密码: ')
+        username = input('请输入身份证号码: ')
+        password = getpass.getpass('请输入密码的32位小写MD5值: ')
         user = [username, password]
 
         if is_valid_username(username):
